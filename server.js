@@ -20,7 +20,7 @@ const user = newUser.rows[0];
             }
         });
 
-    } catch (err) {
+     catch (err) {
         console.error('❌ Register error:', err);
         res.status(500).json({
             success: false,
