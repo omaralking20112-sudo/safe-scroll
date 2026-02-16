@@ -12,22 +12,56 @@ const user = newUser.rows[0];
             success: true,
             message: '✅ تم إنشاء الحساب بنجاح',
             token,
+const bcrypt = require('bcrypt');
+const User = require('./models/User'); // Assuming a Mongoose model
+
+app.post('/register', async (req, res) => {
+    try {
+        const { username, email, password, profilePic } = req.body;
+
+        // Validate inputs (add your validation logic here)
+        if (!username || !email || !password) {
+            return res.status(400).json({ success: false, message: 'Missing required fields' });
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({ success: false, message: 'User already exists' });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create user
+        const newUser = new User({
+            username,
+            email,
+            password: hashedPassword,
+            profilePic: profilePic || null
+        });
+        const savedUser = await newUser.save();
+
+        // Respond with success
+        res.status(201).json({
+            success: true,
+            message: 'User registered successfully',
             user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                profilePic: user.profile_pic
+                id: savedUser._id, // Or savedUser.id if using a different ID
+                username: savedUser.username,
+                email: savedUser.email,
+                profilePic: savedUser.profilePic
             }
         });
-
-     catch (err) {
+    } catch (err) {
         console.error('❌ Register error:', err);
         res.status(500).json({
             success: false,
             message: 'حدث خطأ في السيرفر',
-            error: err.message
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined // Hide in prod
         });
     }
+});
 });
 
 // تسجيل الدخول
